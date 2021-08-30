@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace files_module
 {
@@ -8,15 +9,17 @@ namespace files_module
     {
         static void Main(string[] args)
         {
-            var currentDirectory = Directory.GetCurrentDirectory();
-            var storesDirectory = Path.Combine(currentDirectory, "stores");
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string storesDirectory = Path.Combine(currentDirectory, "stores");
 
-            var salesTotalDir = Path.Combine(currentDirectory, "salesTotalDir");
+            string salesTotalDir = Path.Combine(currentDirectory, "salesTotalDir");
             Directory.CreateDirectory(salesTotalDir);
 
             var salesFiles = FindFiles(storesDirectory);
 
-            File.WriteAllText(Path.Combine(salesTotalDir, "totals.txt"), String.Empty);
+            var salesTotal = CalculateSalesTotal(salesFiles);
+
+            File.AppendAllText(Path.Combine(salesTotalDir, "totals.txt"), $"{salesTotal}{Environment.NewLine}");
         }
 
         static IEnumerable<string> FindFiles(string dirName)
@@ -30,6 +33,27 @@ namespace files_module
                     salesFile.Add(file);
             }
             return salesFile;
+        }
+
+        static double CalculateSalesTotal(IEnumerable<string> salesFiles)
+        {
+            double salesTotal = 0;
+
+            foreach(var file in salesFiles)
+            {
+                string salesJson = File.ReadAllText(file);
+
+                SalesData data = JsonConvert.DeserializeObject<SalesData>(salesJson);
+
+                salesTotal+=data.Total;
+            }
+
+            return salesTotal;
+        }
+
+        class SalesData
+        {
+            public double Total { get; set; }
         }
 
     }
